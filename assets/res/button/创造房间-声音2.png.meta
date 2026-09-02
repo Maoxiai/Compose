@@ -1,0 +1,38 @@
+{
+  "ver": "2.3.7",
+  "uuid": "333389b7-c5c3-422d-aa1c-8b3315c93136",
+  "importer": "texture",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "premultiplyAlpha": false,
+  "genMipmaps": false,
+  "packable": true,
+  "width": 100,
+  "height": 101,
+  "platformSettings": {},
+  "subMetas": {
+    "创造房间-声音2": {
+      "ver": "1.0.6",
+      "uuid": "0aa710b7-1bb7-498b-9979-9f0cf2d73e0e",
+      "importer": "sprite-frame",
+      "rawTextureUuid": "333389b7-c5c3-422d-aa1c-8b3315c93136",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": 0,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 100,
+      "height": 101,
+      "rawWidth": 100,
+      "rawHeight": 101,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}
