@@ -35,7 +35,8 @@ cc.Class({
     onCollisionEnter: function(other, self){
         console.log("死亡");
         // 保存数据
-        if(cc.sys.localStorage.getItem("score") < window.SCORE){
+        var best = cc.sys.localStorage.getItem("score");
+        if(best === null || best === undefined || best === "" || Number(best) < Number(window.SCORE)){
             cc.sys.localStorage.setItem('score', window.SCORE);
         }
         this.DeathNode.setPosition(cc.v2(0,0));

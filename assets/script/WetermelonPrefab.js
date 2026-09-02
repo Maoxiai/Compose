@@ -115,8 +115,10 @@ cc.Class({
 
     // 西瓜结合爆炸
     watermelonBoom(type){
-        // 播放音效
-        this.node.getComponent(cc.AudioSource).play();
+        // 播放音效（根据音效开关决定）
+        if(window.SOUND_ON){
+            this.node.getComponent(cc.AudioSource).play();
+        }
         
         this.sprite = this.node.getComponent(cc.Sprite);
         this.sprite.spriteFrame = this.BoomFrame[type];
@@ -136,7 +138,8 @@ cc.Class({
     // 死亡结束游戏
     deathGame(){
         // 保存游戏
-        if(cc.sys.localStorage.getItem("score") == null || cc.sys.localStorage.getItem("score") < window.SCORE){
+        var best = cc.sys.localStorage.getItem("score");
+        if(best === null || best === undefined || best === "" || Number(best) < Number(window.SCORE)){
             cc.sys.localStorage.setItem('score', window.SCORE);
         }
     },

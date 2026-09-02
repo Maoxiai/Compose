@@ -16,31 +16,39 @@ cc.Class({
         typeNode2: cc.Node,
         // 西瓜图片
         spriteframe:[cc.SpriteFrame],
+        // 音效开关图片（开启 / 静音）
+        SoundOnFrame: cc.SpriteFrame,
+        SoundOffFrame: cc.SpriteFrame,
     },
 
     // LIFE-CYCLE CALLBACKS:
 
     onLoad () {
         // 开启物理系统
-        cc.director.getPhysicsManager().enabled;
+        cc.director.getPhysicsManager().enabled = true;
         // 设置重力
         cc.director.getPhysicsManager().gravity = cc.v2(0, -1200);
         // 获取开启碰撞
-        var cmanager = cc.director.getCollisionManager;
+        var cmanager = cc.director.getCollisionManager();
         cmanager.enabled = true;
+
+        // 恢复音效开关状态
+        if(cc.sys.localStorage.getItem("sound_on") !== null){
+            window.SOUND_ON = cc.sys.localStorage.getItem("sound_on") === "true";
+        }
 
         // 注册触摸事件
         this.node.on("touchstart", this.WatermelonDown, this);
         this.IsWatermelonDown = true;
         window.BACKGROUND_NODE = this.node;
+
+        // 创建音效开关按钮
+        this.createSoundButton();
         
-        wx.getSystemInfo({
-            success (res) {
-                window.s_width = res.screenWidth;
-                window.s_height = res.screenHeight;
-            
-            }
-        });
+        // 同步获取屏幕尺寸，确保创建广告前拿到真实宽高
+        var sysInfo = wx.getSystemInfoSync();
+        window.s_width = sysInfo.screenWidth;
+        window.s_height = sysInfo.screenHeight;
 
         // 创建 Banner 广告实例，提前初始化
         bannerAd = wx.createBannerAd({
@@ -72,15 +80,22 @@ cc.Class({
 
     // 返回主页面
     goMainWindow(){
+        // 保存数据（在重置前比较最高分）
+        this.saveBestScore();
         window.SCORE = 0;
         window.WETERMELON_TYPE = 0;
-        // 保存数据
-        if(cc.sys.localStorage.getItem("score") < window.SCORE){
-            cc.sys.localStorage.setItem('score', window.SCORE);
-        }
+        window.WETERMELON_ARRAY = [];
         // 在适合的场景显示 Banner 广告
         bannerAd.hide();
         cc.director.loadScene("main_scene");
+    },
+
+    // 保存最高分
+    saveBestScore(){
+        var best = cc.sys.localStorage.getItem("score");
+        if(best === null || best === undefined || best === "" || Number(best) < Number(window.SCORE)){
+            cc.sys.localStorage.setItem('score', window.SCORE);
+        }
     },
 
     // 触摸事件西瓜下落
@@ -117,15 +132,43 @@ cc.Class({
 
     // 重新开始游戏
     againGame(){
+        // 保存数据（在重置前比较最高分）
+        this.saveBestScore();
         window.SCORE = 0;
         window.WETERMELON_TYPE = 0;
-        this.node.on("touchstart", this.WatermelonDown, this);
-
+        window.WETERMELON_ARRAY = [];
         cc.director.loadScene("game_scene");
-        // 保存数据
-        if(cc.sys.localStorage.getItem("score") < window.SCORE){
-            cc.sys.localStorage.setItem('score', window.SCORE);
+    },
+
+    // 切换音效开关
+    toggleSound(event){
+        // 阻止事件冒泡，避免触发水果下落
+        if(event && event.stopPropagation){
+            event.stopPropagation();
         }
+        window.SOUND_ON = !window.SOUND_ON;
+        cc.sys.localStorage.setItem("sound_on", window.SOUND_ON);
+        if(this.soundSprite){
+            this.soundSprite.spriteFrame = window.SOUND_ON ? this.SoundOnFrame : this.SoundOffFrame;
+        }
+    },
+
+    // 创建音效开关按钮
+    createSoundButton(){
+        this.soundNode = new cc.Node("sound_bt");
+        var sprite = this.soundNode.addComponent(cc.Sprite);
+        sprite.spriteFrame = window.SOUND_ON ? this.SoundOnFrame : this.SoundOffFrame;
+        this.soundSprite = sprite;
+
+        this.soundNode.setContentSize(70, 70);
+        this.soundNode.on(cc.Node.EventType.TOUCH_START, function(event){
+            event.stopPropagation();
+        }, this);
+        this.soundNode.on(cc.Node.EventType.TOUCH_END, this.toggleSound, this);
+
+        // 将按钮放置在右上角（位于“下一个水果”预览下方，避免与 slice1 重叠）
+        this.node.addChild(this.soundNode);
+        this.soundNode.setPosition(cc.v2(300, 460));
     },
 
     // update (dt) {},

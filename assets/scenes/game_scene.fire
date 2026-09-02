@@ -2645,6 +2645,12 @@
       "__id__": 54
     },
     "typeNode2": null,
+    "SoundOnFrame": {
+      "__uuid__": "d86d9c17-f2e8-412a-94ae-87282e04e1f0"
+    },
+    "SoundOffFrame": {
+      "__uuid__": "0aa710b7-1bb7-498b-9979-9f0cf2d73e0e"
+    },
     "spriteframe": [
       {
         "__uuid__": "52dd78eb-a243-48a6-9322-1b11547580d5"

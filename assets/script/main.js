@@ -23,12 +23,10 @@ cc.Class({
              console.log("最高得分", cc.sys.localStorage.getItem("score"));
          }
 
-         wx.getSystemInfo({
-            success (res) {
-                window.s_width = res.screenWidth;
-                window.s_height = res.screenHeight;
-            }
-        });
+         // 同步获取屏幕尺寸，确保创建广告前拿到真实宽高
+         var sysInfo = wx.getSystemInfoSync();
+         window.s_width = sysInfo.screenWidth;
+         window.s_height = sysInfo.screenHeight;
 
          // 创建原生广告
          customAd = wx.createCustomAd({
