@@ -209,9 +209,9 @@
     "_clearFlags": 7,
     "_backgroundColor": {
       "__type__": "cc.Color",
-      "r": 0,
-      "g": 0,
-      "b": 0,
+      "r": 255,
+      "g": 232,
+      "b": 157,
       "a": 255
     },
     "_depth": -1,
@@ -2651,6 +2651,21 @@
     "SoundOffFrame": {
       "__uuid__": "0aa710b7-1bb7-498b-9979-9f0cf2d73e0e"
     },
+    "ItemBgFrame": {
+      "__uuid__": "34986af2-e502-4687-b98d-0c0ab8ae2dfe"
+    },
+    "BombIconFrame": {
+      "__uuid__": "cd51980d-5a8f-4ae1-b3cf-11bbe57e6a57"
+    },
+    "RerollIconFrame": {
+      "__uuid__": "bb2e4f17-7691-46da-81de-8e1fa62051b6"
+    },
+    "ShrinkIconFrame": {
+      "__uuid__": "169a6340-b176-4984-9436-fd5be633ebd8"
+    },
+    "UndoIconFrame": {
+      "__uuid__": "e13b9f72-2a51-4500-9629-1d0208896bdd"
+    },
     "spriteframe": [
       {
         "__uuid__": "52dd78eb-a243-48a6-9322-1b11547580d5"
@@ -2702,7 +2717,7 @@
       "height": 1280
     },
     "_fitWidth": true,
-    "_fitHeight": true,
+    "_fitHeight": false,
     "_id": "59Cd0ovbdF4byw5sbjJDx7"
   },
   {
