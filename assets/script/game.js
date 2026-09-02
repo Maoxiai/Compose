@@ -33,8 +33,9 @@ cc.Class({
         cmanager.enabled = true;
 
         // 恢复音效开关状态
-        if(cc.sys.localStorage.getItem("sound_on") !== null){
-            window.SOUND_ON = cc.sys.localStorage.getItem("sound_on") === "true";
+        var savedSound = cc.sys.localStorage.getItem("sound_on");
+        if(savedSound !== null && savedSound !== undefined){
+            window.SOUND_ON = (savedSound === true || savedSound === "true");
         }
 
         // 注册触摸事件
@@ -147,7 +148,7 @@ cc.Class({
             event.stopPropagation();
         }
         window.SOUND_ON = !window.SOUND_ON;
-        cc.sys.localStorage.setItem("sound_on", window.SOUND_ON);
+        cc.sys.localStorage.setItem("sound_on", window.SOUND_ON ? "true" : "false");
         if(this.soundSprite){
             this.soundSprite.spriteFrame = window.SOUND_ON ? this.SoundOnFrame : this.SoundOffFrame;
         }
