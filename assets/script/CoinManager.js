@@ -40,8 +40,12 @@ var CoinManager = {
     },
 
     // 对局结算：max(5, floor(score / 50))，每局只结算一次
+    // 得分必须大于 0 才结算，防止“开始后立即退出”刷金币
     settleScore: function (score) {
         if (window.COIN_SETTLED) {
+            return 0;
+        }
+        if (!score || score <= 0) {
             return 0;
         }
         window.COIN_SETTLED = true;

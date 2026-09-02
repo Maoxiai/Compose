@@ -2657,6 +2657,18 @@
       "__id__": 5
     },
     "_enabled": true,
+    "SoundOnFrame": {
+      "__uuid__": "d86d9c17-f2e8-412a-94ae-87282e04e1f0"
+    },
+    "SoundOffFrame": {
+      "__uuid__": "0aa710b7-1bb7-498b-9979-9f0cf2d73e0e"
+    },
+    "CoinFrame": {
+      "__uuid__": "a1a34c0c-a235-48a6-8d09-cdf900a95224"
+    },
+    "SettingFrame": {
+      "__uuid__": "a48a9ce2-892e-40f6-8325-82df16b2f617"
+    },
     "_id": "c18ORm/vVJjqrr7ay9mpZJ"
   },
   {
