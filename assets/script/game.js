@@ -9,6 +9,8 @@ var BombItem = require('./BombItem');
 var RerollItem = require('./RerollItem');
 var ShrinkItem = require('./ShrinkItem');
 var UndoItem = require('./UndoItem');
+var CoinManager = require('./CoinManager');
+var AdManager = require('./AdManager');
 
 cc.Class({
     extends: cc.Component,
@@ -63,7 +65,12 @@ cc.Class({
 
         // 初始化道具系统
         this.initItems();
+        this.migrateItems();
         this.createItemBar();
+        this.createCoinHud();
+
+        // 重置本局金币结算标记
+        window.COIN_SETTLED = false;
         
         // 同步获取屏幕尺寸，确保创建广告前拿到真实宽高
         var sysInfo = wx.getSystemInfoSync();
@@ -102,6 +109,8 @@ cc.Class({
     goMainWindow(){
         // 保存数据（在重置前比较最高分）
         this.saveBestScore();
+        // 结算本局金币奖励
+        this.settleCoins();
         window.SCORE = 0;
         window.WETERMELON_TYPE = 0;
         window.WETERMELON_ARRAY = [];
@@ -206,11 +215,29 @@ cc.Class({
         this.activeItem = null;
         this.activeItemIndex = -1;
         this.itemDefs = [
-            { item: new BombItem(), icon: this.BombIconFrame },
-            { item: new RerollItem(), icon: this.RerollIconFrame },
-            { item: new ShrinkItem(), icon: this.ShrinkIconFrame },
-            { item: new UndoItem(), icon: this.UndoIconFrame },
+            { item: new BombItem(), icon: this.BombIconFrame, price: 80 },
+            { item: new RerollItem(), icon: this.RerollIconFrame, price: 40 },
+            { item: new ShrinkItem(), icon: this.ShrinkIconFrame, price: 60 },
+            { item: new UndoItem(), icon: this.UndoIconFrame, price: 60 },
         ];
+    },
+
+    // 迁移旧版道具初始数量（3 → 5），仅执行一次
+    migrateItems(){
+        var migrated = cc.sys.localStorage.getItem('item_init_migrated');
+        if(migrated === '1'){
+            return;
+        }
+        for(var i = 0; i < this.itemDefs.length; i++){
+            var id = this.itemDefs[i].item.itemId;
+            var key = 'item_' + id;
+            var val = cc.sys.localStorage.getItem(key);
+            // 旧版初始为 3，若当前值正好为 3（未使用过），提升到新初始 5
+            if(val !== null && val !== undefined && val !== '' && Number(val) === 3){
+                cc.sys.localStorage.setItem(key, 5);
+            }
+        }
+        cc.sys.localStorage.setItem('item_init_migrated', '1');
     },
 
     // 创建底部道具栏
@@ -290,7 +317,7 @@ cc.Class({
         var item = def.item;
         var count = this.getItemCount(item.itemId);
         if(count <= 0){
-            this.showItemTip(item.itemName + '数量不足');
+            this.showItemShop(def, index);
             return;
         }
         // 冷却检查
@@ -456,10 +483,14 @@ cc.Class({
         var key = 'item_' + id;
         var val = cc.sys.localStorage.getItem(key);
         if(val === null || val === undefined || val === ''){
-            cc.sys.localStorage.setItem(key, 3);
-            return 3;
+            cc.sys.localStorage.setItem(key, 5);
+            return 5;
         }
         return Number(val);
+    },
+
+    addItemCount(id, delta){
+        this.setItemCount(id, this.getItemCount(id) + delta);
     },
 
     setItemCount(id, count){
@@ -482,6 +513,167 @@ cc.Class({
         }
     },
 
+    // ==================== 金币 & 道具获取 ====================
+
+    // 结算本局金币奖励（主动退出时）
+    settleCoins(){
+        var reward = CoinManager.settleScore(window.SCORE);
+        if(reward > 0 && window.wx){
+            wx.showToast({ title: '+' + reward + ' 金币', icon: 'none' });
+        }
+    },
+
+    // 创建金币余额显示
+    createCoinHud(){
+        this.coinNode = new cc.Node('coin_hud');
+        var label = this.coinNode.addComponent(cc.Label);
+        label.fontSize = 26;
+        label.lineHeight = 26;
+        label.node.color = new cc.Color(180, 110, 10);
+        this.coinLabel = label;
+        this.coinNode.setPosition(cc.v2(-290, 480));
+        this.node.addChild(this.coinNode);
+        this.refreshCoinHud();
+    },
+
+    // 刷新金币余额显示
+    refreshCoinHud(){
+        if(this.coinLabel){
+            this.coinLabel.string = '金币 ' + CoinManager.get();
+        }
+    },
+
+    // 弹出道具获取面板（道具数量为 0 时）
+    showItemShop(def, index){
+        if(this.shopRoot){
+            this.closeItemShop();
+        }
+        var self = this;
+
+        var root = new cc.Node('item_shop');
+        root.setContentSize(cc.size(720, 1280));
+        root.on(cc.Node.EventType.TOUCH_START, function(e){ e.stopPropagation(); }, this);
+        root.on(cc.Node.EventType.TOUCH_END, function(e){ e.stopPropagation(); }, this);
+        this.node.addChild(root);
+        this.shopRoot = root;
+
+        // 半透明遮罩
+        var mask = new cc.Node('mask');
+        var g = mask.addComponent(cc.Graphics);
+        g.fillColor = new cc.Color(0, 0, 0, 150);
+        g.rect(-360, -640, 720, 1280);
+        g.fill();
+        root.addChild(mask);
+
+        // 面板背景
+        var panel = new cc.Node('panel');
+        if(this.ItemBgFrame){
+            var panelSprite = panel.addComponent(cc.Sprite);
+            panelSprite.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+            panelSprite.spriteFrame = this.ItemBgFrame;
+        }
+        panel.setContentSize(cc.size(380, 460));
+        root.addChild(panel);
+
+        // 标题
+        var title = new cc.Node('title');
+        var titleLabel = title.addComponent(cc.Label);
+        titleLabel.string = '获取【' + def.item.itemName + '】';
+        titleLabel.fontSize = 30;
+        titleLabel.lineHeight = 30;
+        titleLabel.node.color = new cc.Color(120, 70, 20);
+        title.setPosition(cc.v2(0, 170));
+        panel.addChild(title);
+
+        // 看广告按钮
+        var adBtn = this.createShopButton('看广告 +3', new cc.Color(100, 55, 15));
+        adBtn.setPosition(cc.v2(0, 70));
+        panel.addChild(adBtn);
+        adBtn.on(cc.Node.EventType.TOUCH_END, function(e){
+            e.stopPropagation();
+            self.watchAdForItem(index);
+        }, this);
+
+        // 金币购买按钮
+        var buyBtn = this.createShopButton('金币购买 x1（' + def.price + '金币）', new cc.Color(100, 55, 15));
+        buyBtn.setPosition(cc.v2(0, -30));
+        panel.addChild(buyBtn);
+        buyBtn.on(cc.Node.EventType.TOUCH_END, function(e){
+            e.stopPropagation();
+            self.buyItemWithCoin(index);
+        }, this);
+
+        // 取消按钮
+        var cancelBtn = this.createShopButton('取消', new cc.Color(100, 55, 15));
+        cancelBtn.setPosition(cc.v2(0, -130));
+        panel.addChild(cancelBtn);
+        cancelBtn.on(cc.Node.EventType.TOUCH_END, function(e){
+            e.stopPropagation();
+            self.closeItemShop();
+        }, this);
+    },
+
+    // 创建一个弹窗按钮
+    createShopButton(text, textColor){
+        var btn = new cc.Node('shop_bt');
+        btn.setContentSize(cc.size(280, 74));
+        if(this.ItemBgFrame){
+            var bg = btn.addComponent(cc.Sprite);
+            bg.sizeMode = cc.Sprite.SizeMode.CUSTOM;
+            bg.spriteFrame = this.ItemBgFrame;
+        }
+        var labelNode = new cc.Node('label');
+        var label = labelNode.addComponent(cc.Label);
+        label.string = text;
+        label.fontSize = 26;
+        label.lineHeight = 26;
+        label.node.color = textColor;
+        btn.addChild(labelNode);
+        btn.on(cc.Node.EventType.TOUCH_START, function(e){ e.stopPropagation(); }, this);
+        return btn;
+    },
+
+    // 关闭道具获取面板
+    closeItemShop(){
+        if(this.shopRoot){
+            this.shopRoot.destroy();
+            this.shopRoot = null;
+        }
+    },
+
+    // 看广告获得道具 +3
+    watchAdForItem(index){
+        var self = this;
+        var def = this.itemDefs[index];
+        AdManager.show(function(){
+            self.addItemCount(def.item.itemId, 3);
+            self.refreshItemCounts();
+            self.closeItemShop();
+            self.showItemTip(def.item.itemName + ' +3');
+        }, function(reason){
+            self.showItemTip(reason || '广告暂不可用');
+        });
+    },
+
+    // 金币购买道具 x1
+    buyItemWithCoin(index){
+        var def = this.itemDefs[index];
+        var amount = CoinManager.get();
+        if(amount < def.price){
+            this.showItemTip('金币不足，需要 ' + def.price + ' 金币');
+            return;
+        }
+        if(!CoinManager.spend(def.price)){
+            this.showItemTip('购买失败');
+            return;
+        }
+        this.addItemCount(def.item.itemId, 1);
+        this.refreshItemCounts();
+        this.refreshCoinHud();
+        this.closeItemShop();
+        this.showItemTip(def.item.itemName + ' +1');
+    },
+
     // 显示临时提示
     showItemTip(text){
         if(!this.tipNode){
@@ -496,6 +688,12 @@ cc.Class({
         var tipLabel = this.tipNode.getComponent(cc.Label);
         tipLabel.string = text;
         this.tipNode.active = true;
+
+        // 提升到最顶层，避免被弹窗遮罩遮挡
+        var lastIdx = this.node.childrenCount - 1;
+        if(this.tipNode.getSiblingIndex() !== lastIdx){
+            this.tipNode.setSiblingIndex(lastIdx);
+        }
 
         if(this._hideTipFunc){
             this.unschedule(this._hideTipFunc);

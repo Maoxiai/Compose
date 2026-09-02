@@ -5,6 +5,8 @@
 // Learn life-cycle callbacks:
 //  - https://docs.cocos.com/creator/manual/en/scripting/life-cycle-callbacks.html
 
+var CoinManager = require('./CoinManager');
+
 cc.Class({
     extends: cc.Component,
 
@@ -41,6 +43,11 @@ cc.Class({
         }
         this.DeathNode.setPosition(cc.v2(0,0));
         this.Background.off("touchstart", this.WatermelonDown, this)
+        // 结算本局金币奖励
+        var reward = CoinManager.settleScore(window.SCORE);
+        if(reward > 0 && window.wx){
+            wx.showToast({ title: '+' + reward + ' 金币', icon: 'none' });
+        }
         // 在适合的场景显示插屏广告
         if (interstitialAd) {
             interstitialAd.show().catch((err) => {
