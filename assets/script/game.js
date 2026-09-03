@@ -12,6 +12,7 @@ var UndoItem = require('./UndoItem');
 var CoinManager = require('./CoinManager');
 var AdManager = require('./AdManager');
 var RankManager = require('./RankManager');
+var ComboManager = require('./ComboManager');
 
 cc.Class({
     extends: cc.Component,
@@ -72,6 +73,9 @@ cc.Class({
 
         // 重置本局金币结算标记
         window.COIN_SETTLED = false;
+
+        // 重置本局连击状态
+        ComboManager.reset();
         
         // 同步获取屏幕尺寸，确保创建广告前拿到真实宽高
         var sysInfo = wx.getSystemInfoSync();
