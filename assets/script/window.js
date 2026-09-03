@@ -11,3 +11,5 @@ window.s_height = 0;
  window.customAd = null;
  // 音效开关（true 开启，false 静音）
  window.SOUND_ON = true;
+ // 振动开关（true 开启，false 关闭）
+ window.VIBRATE_ON = true;

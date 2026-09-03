@@ -7,6 +7,7 @@
 
 var CoinManager = require('./CoinManager');
 var RankManager = require('./RankManager');
+var VibrateManager = require('./VibrateManager');
 
 cc.Class({
     extends: cc.Component,
@@ -44,6 +45,9 @@ cc.Class({
          if(savedSound !== null && savedSound !== undefined){
              window.SOUND_ON = (savedSound === true || savedSound === "true");
          }
+
+         // 恢复振动开关状态
+         window.VIBRATE_ON = VibrateManager.getOn();
 
          // 每日签到发放金币
          var sign = CoinManager.dailySign();
@@ -180,7 +184,7 @@ cc.Class({
         titleLabel.fontSize = 44;
         titleLabel.lineHeight = 44;
         titleLabel.node.color = new cc.Color(140, 80, 25);
-        titleNode.setPosition(cc.v2(0, 110));
+        titleNode.setPosition(cc.v2(0, 120));
         panel.addChild(titleNode);
 
         // 音效文字
@@ -190,7 +194,7 @@ cc.Class({
         soundLabel.fontSize = 34;
         soundLabel.lineHeight = 34;
         soundLabel.node.color = new cc.Color(120, 70, 20);
-        soundTextNode.setPosition(cc.v2(-90, 20));
+        soundTextNode.setPosition(cc.v2(-90, 45));
         panel.addChild(soundTextNode);
 
         // 音效开关按钮（图标，点击切换）
@@ -199,16 +203,40 @@ cc.Class({
         soundSprite.sizeMode = cc.Sprite.SizeMode.CUSTOM;
         soundSprite.spriteFrame = window.SOUND_ON ? this.SoundOnFrame : this.SoundOffFrame;
         soundBtn.setContentSize(70, 70);
-        soundBtn.setPosition(cc.v2(130, 20));
+        soundBtn.setPosition(cc.v2(130, 45));
         soundBtn.on(cc.Node.EventType.TOUCH_START, function(e){ e.stopPropagation(); }, this);
         soundBtn.on(cc.Node.EventType.TOUCH_END, this.toggleSound, this);
         panel.addChild(soundBtn);
         this.soundSprite = soundSprite;
 
+        // 振动文字
+        var vibrateTextNode = new cc.Node('vibrate_text');
+        var vibrateLabel = vibrateTextNode.addComponent(cc.Label);
+        vibrateLabel.string = '振动';
+        vibrateLabel.fontSize = 34;
+        vibrateLabel.lineHeight = 34;
+        vibrateLabel.node.color = new cc.Color(120, 70, 20);
+        vibrateTextNode.setPosition(cc.v2(-90, -40));
+        panel.addChild(vibrateTextNode);
+
+        // 振动开关按钮（滑块样式，Graphics 绘制在独立子节点上）
+        var vibrateBtn = new cc.Node('vibrate_toggle');
+        vibrateBtn.setContentSize(110, 56);
+        vibrateBtn.setPosition(cc.v2(130, -40));
+        vibrateBtn.on(cc.Node.EventType.TOUCH_START, function(e){ e.stopPropagation(); }, this);
+        vibrateBtn.on(cc.Node.EventType.TOUCH_END, this.toggleVibrate, this);
+        panel.addChild(vibrateBtn);
+
+        var vibrateBg = new cc.Node('vibrate_bg');
+        var vibrateGraph = vibrateBg.addComponent(cc.Graphics);
+        this.vibrateToggleGraph = vibrateGraph;
+        vibrateBtn.addChild(vibrateBg);
+        this._drawVibrateToggle();
+
         // 关闭按钮（容器节点承载点击；背景 Graphics 与文字 Label 分离到不同节点，避免同节点共存导致首次渲染异常）
         var closeBtn = new cc.Node('close_bt');
         closeBtn.setContentSize(180, 60);
-        closeBtn.setPosition(cc.v2(0, -110));
+        closeBtn.setPosition(cc.v2(0, -125));
 
         var closeBg = new cc.Node('close_bg');
         var closeGraph = closeBg.addComponent(cc.Graphics);
@@ -245,7 +273,8 @@ cc.Class({
         if(!g){ return; }
         g.clear();
         g.fillColor = new cc.Color(255, 246, 220, 255);
-        g.roundRect(-220, -170, 440, 340, 24);
+        // 面板加高以容纳「振动」开关行
+        g.roundRect(-220, -200, 440, 400, 24);
         g.fill();
         g.lineWidth = 5;
         g.strokeColor = new cc.Color(140, 80, 25, 255);
@@ -264,6 +293,22 @@ cc.Class({
         g.stroke();
     },
 
+    // 绘制振动开关滑块（开启：绿色槽 + 圆点在右；关闭：灰色槽 + 圆点在左）
+    _drawVibrateToggle(){
+        var g = this.vibrateToggleGraph;
+        if(!g){ return; }
+        g.clear();
+        var on = window.VIBRATE_ON;
+        // 滑槽
+        g.fillColor = on ? new cc.Color(90, 190, 90, 255) : new cc.Color(195, 190, 180, 255);
+        g.roundRect(-55, -28, 110, 56, 28);
+        g.fill();
+        // 滑块圆点
+        g.fillColor = new cc.Color(255, 255, 255, 255);
+        g.circle(on ? 27 : -27, 0, 22);
+        g.fill();
+    },
+
     // 打开设置面板
     openSettings(event){
         if(event && event.stopPropagation){
@@ -271,11 +316,14 @@ cc.Class({
         }
         if(this.settingsPanel){
             this.refreshPanelSound();
+            // 面板置顶，确保遮罩盖住排行榜图标等后创建的节点
+            this.settingsPanel.setSiblingIndex(this.node.childrenCount - 1);
             this.settingsPanel.active = true;
-            // 激活后重绘，修复遮罩/背景/关闭按钮首次打开不显示
+            // 激活后重绘，修复遮罩/背景/关闭按钮/振动开关首次打开不显示
             this._drawMask();
             this._drawBox();
             this._drawCloseBtn();
+            this._drawVibrateToggle();
         }
     },
 
@@ -304,6 +352,19 @@ cc.Class({
         window.SOUND_ON = !window.SOUND_ON;
         cc.sys.localStorage.setItem("sound_on", window.SOUND_ON ? "true" : "false");
         this.refreshPanelSound();
+    },
+
+    // 切换振动开关
+    toggleVibrate(event){
+        if(event && event.stopPropagation){
+            event.stopPropagation();
+        }
+        var on = VibrateManager.toggle();
+        // 切换为开启时立即轻震一下，作为反馈
+        if(on){
+            VibrateManager.vibrate('light');
+        }
+        this._drawVibrateToggle();
     },
 
     // 开始游戏按钮 Q 弹动效（左右伸缩循环）
@@ -477,6 +538,8 @@ cc.Class({
         var self = this;
         // 好友关系需用户授权才能读取；必须在点击手势内发起授权才弹窗
         this._ensureFriendAuth(function(){
+            // 面板置顶，确保遮罩盖住设置图标等其它节点
+            self.rankPanel.setSiblingIndex(self.node.childrenCount - 1);
             self.rankPanel.active = true;
             self.refreshRankTabs();
             self.scheduleOnce(function(){

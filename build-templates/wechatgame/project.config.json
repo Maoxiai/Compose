@@ -1,0 +1,42 @@
+{
+    "description": "项目配置文件。",
+    "miniprogramRoot": "./",
+    "setting": {
+        "urlCheck": true,
+        "es6": true,
+        "postcss": true,
+        "minified": false,
+        "newFeature": false
+    },
+    "compileType": "game",
+    "libVersion": "latest",
+    "appid": "wx6cf221f5ff6c905f",
+    "projectname": "Compose",
+    "condition": {
+        "search": {
+            "current": -1,
+            "list": []
+        },
+        "conversation": {
+            "current": -1,
+            "list": []
+        },
+        "game": {
+            "currentL": -1,
+            "list": [],
+            "current": -1
+        },
+        "miniprogram": {
+            "current": -1,
+            "list": []
+        }
+    },
+    "packOptions": {
+        "ignore": [],
+        "include": []
+    },
+    "editorSetting": {
+        "tabIndent": "insertSpaces",
+        "tabSize": 2
+    }
+}

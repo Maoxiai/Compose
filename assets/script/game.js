@@ -13,6 +13,7 @@ var CoinManager = require('./CoinManager');
 var AdManager = require('./AdManager');
 var RankManager = require('./RankManager');
 var ComboManager = require('./ComboManager');
+var VibrateManager = require('./VibrateManager');
 
 cc.Class({
     extends: cc.Component,
@@ -56,6 +57,9 @@ cc.Class({
         if(savedSound !== null && savedSound !== undefined){
             window.SOUND_ON = (savedSound === true || savedSound === "true");
         }
+
+        // 恢复振动开关状态（直接从 game_scene 调试启动时也能读到持久化设置）
+        window.VIBRATE_ON = VibrateManager.getOn();
 
         // 注册触摸事件
         this.node.on("touchstart", this.WatermelonDown, this);

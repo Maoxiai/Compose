@@ -6,6 +6,7 @@
 //  - https://docs.cocos.com/creator/manual/en/scripting/life-cycle-callbacks.html
 
 var ComboManager = require('./ComboManager');
+var VibrateManager = require('./VibrateManager');
 
 cc.Class({
     extends: cc.Component,
@@ -122,6 +123,9 @@ cc.Class({
             this.node.getComponent(cc.AudioSource).play();
         }
 
+        // 振动反馈：合成结果为最大四种水果（type+1 >= 7）时强震，其余轻震
+        VibrateManager.vibrate(type + 1 >= 7 ? 'heavy' : 'light');
+
         // 登记连击：时间窗口内连续合成获得分数倍率加成
         var multiplier = ComboManager.onMerge();
         // 连击飘字特效（从 Combo x2 开始提示）
@@ -138,8 +142,21 @@ cc.Class({
             this.changeType(type + 1);
             window.SCORE += Math.round((type + 1) * 2 * multiplier);
             console.log("得分", window.SCORE, "连击倍率", multiplier);
+            // 合并 Pop 动画：新水果放大回弹
+            this.playPopAnimation();
         }, 0.2);
 
+    },
+
+    // 合并 Pop 动画：新水果从小弹出再回弹（scale 0 → 1.2 → 1，总时长 0.3s）
+    playPopAnimation(){
+        // 停掉旧动画，避免连锁合成时缩放卡在中间值
+        this.node.stopAllActions();
+        this.node.setScale(0);
+        cc.tween(this.node)
+            .to(0.15, { scaleX: 1.2, scaleY: 1.2 }, { easing: 'sineOut' })
+            .to(0.15, { scaleX: 1, scaleY: 1 }, { easing: 'sineInOut' })
+            .start();
     },
 
     // 连击飘字：在合成位置弹出「Combo xN!」，弹出后渐隐上浮
