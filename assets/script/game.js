@@ -11,6 +11,7 @@ var ShrinkItem = require('./ShrinkItem');
 var UndoItem = require('./UndoItem');
 var CoinManager = require('./CoinManager');
 var AdManager = require('./AdManager');
+var RankManager = require('./RankManager');
 
 cc.Class({
     extends: cc.Component,
@@ -125,6 +126,8 @@ cc.Class({
         if(best === null || best === undefined || best === "" || Number(best) < Number(window.SCORE)){
             cc.sys.localStorage.setItem('score', window.SCORE);
         }
+        // 上传分数到微信云存储（好友排行榜）
+        RankManager.upload(window.SCORE);
     },
 
     // 触摸事件西瓜下落

@@ -6,6 +6,7 @@
 //  - https://docs.cocos.com/creator/manual/en/scripting/life-cycle-callbacks.html
 
 var CoinManager = require('./CoinManager');
+var RankManager = require('./RankManager');
 
 cc.Class({
     extends: cc.Component,
@@ -154,6 +155,8 @@ cc.Class({
         if(best === null || best === undefined || best === "" || Number(best) < Number(window.SCORE)){
             cc.sys.localStorage.setItem('score', window.SCORE);
         }
+        // 上传分数到微信云存储（好友排行榜）
+        RankManager.upload(window.SCORE);
         this.DeathNode.setPosition(cc.v2(0,0));
         this.Background.off("touchstart", this.WatermelonDown, this)
         // 结算本局金币奖励
