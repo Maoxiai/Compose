@@ -27,15 +27,128 @@ cc.Class({
             adUnitId: 'adunit-ff8f2ee77c384d1e'
             })
         }
+
+        // 静止结算判定相关状态
+        this.watching = [];          // 进入死亡线区域、等待静止的水果：{node, frames}
+        this.gameOver = false;       // 本局是否已结算
+        this._flashAcc = 0;          // 死亡线闪烁计时
+        this._flashOn = false;       // 死亡线当前是否处于闪烁亮态
+        this._deathSprite = this.node.getComponent(cc.Sprite);
     },
 
     start () {
 
     },
 
-    // 西瓜碰撞死亡
+    // 水果触碰死亡线：不立即结束，等待其静止后再判定
     onCollisionEnter: function(other, self){
-        console.log("死亡");
+        if(this.gameOver){
+            return;
+        }
+        var node = other && other.node;
+        if(!node || !cc.isValid(node)){
+            return;
+        }
+        // 已在监测列表中则忽略
+        for(var i = 0; i < this.watching.length; i++){
+            if(this.watching[i].node === node){
+                return;
+            }
+        }
+        this.watching.push({ node: node, frames: 0 });
+        console.log("进入死亡线区域，等待静止", this.watching.length);
+    },
+
+    // 水果离开死亡线区域（弹回安全区）：取消监测
+    onCollisionExit: function(other, self){
+        var node = other && other.node;
+        if(!node){
+            return;
+        }
+        this._removeWatching(node);
+    },
+
+    _removeWatching(node){
+        for(var i = this.watching.length - 1; i >= 0; i--){
+            if(this.watching[i].node === node){
+                this.watching.splice(i, 1);
+            }
+        }
+    },
+
+    update: function(dt){
+        // 死亡线视觉提示：监测期间红色闪烁
+        this._updateFlash(dt);
+
+        if(this.gameOver || this.watching.length === 0){
+            return;
+        }
+
+        // 逐帧检查静止状态：速度持续低于阈值 N 帧则判定结束
+        for(var i = this.watching.length - 1; i >= 0; i--){
+            var item = this.watching[i];
+            var node = item.node;
+
+            // 水果已被销毁（如合并、道具消除），移出监测
+            if(!node || !cc.isValid(node)){
+                this.watching.splice(i, 1);
+                continue;
+            }
+
+            var rb = node.getComponent(cc.RigidBody);
+            if(!rb){
+                this.watching.splice(i, 1);
+                continue;
+            }
+
+            var v = rb.linearVelocity;
+            var speed = Math.sqrt(v.x * v.x + v.y * v.y);
+            if(speed < 2.0){
+                item.frames++;
+            }else{
+                item.frames = 0;
+            }
+
+            if(item.frames >= 10){
+                this.doGameOver(node);
+                return;
+            }
+        }
+    },
+
+    // 死亡线闪烁提示（监测期间，未结束时闪烁）
+    _updateFlash(dt){
+        var active = !this.gameOver && this.watching.length > 0;
+        if(!active){
+            if(this._flashOn){
+                this.node.opacity = 255;
+                this._flashOn = false;
+            }
+            this._flashAcc = 0;
+            return;
+        }
+        this._flashAcc += dt;
+        if(this._flashAcc >= 0.25){
+            this._flashAcc = 0;
+            this._flashOn = !this._flashOn;
+            this.node.opacity = this._flashOn ? 60 : 255;
+        }
+    },
+
+    // 判定结束并结算
+    doGameOver(node){
+        if(this.gameOver){
+            return;
+        }
+        this.gameOver = true;
+        console.log("死亡（静止后结算）", node ? node.name : '');
+
+        // 恢复死亡线颜色
+        if(this._deathSprite){
+            this.node.opacity = 255;
+        }
+        this._flashOn = false;
+
         // 保存数据
         var best = cc.sys.localStorage.getItem("score");
         if(best === null || best === undefined || best === "" || Number(best) < Number(window.SCORE)){
