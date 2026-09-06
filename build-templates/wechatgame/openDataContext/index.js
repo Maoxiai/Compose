@@ -104,22 +104,26 @@ function loadAndRender(type) {
 }
 
 // 预加载头像，加载完成后自动重绘
+// 注意：onload/onerror 是异步回调，必须用 IIFE 闭包捕获本次迭代的 url 和 img；
+// 否则回调触发时 url/img 已是循环最后一次的值，会导致只有最后一行头像能显示
 function ensureAvatars(list) {
     for (var i = 0; i < list.length; i++) {
-        var url = getAvatarUrl(list[i]);
-        if (!url || images[url] !== undefined) {
-            continue;
-        }
-        images[url] = null; // 占位，避免重复加载
-        var img = wx.createImage();
-        img.onload = function () {
-            images[url] = img;
-            if (visible) render(currentType);
-        };
-        img.onerror = function () {
-            images[url] = null;
-        };
-        img.src = url;
+        (function (entry) {
+            var url = getAvatarUrl(entry);
+            if (!url || images[url] !== undefined) {
+                return;
+            }
+            images[url] = null; // 占位，避免重复加载
+            var img = wx.createImage();
+            img.onload = function () {
+                images[url] = img;
+                if (visible) render(currentType);
+            };
+            img.onerror = function () {
+                images[url] = null;
+            };
+            img.src = url;
+        })(list[i]);
     }
 }
 
