@@ -26,3 +26,23 @@ window.log = function () {
 window.logError = function () {
     console.error.apply(console, arguments);
 };
+
+// 安全调用微信广告接口
+// 广告实例可能为空/已销毁，或微信广告 SDK 内部报错（如 operateWXDataForAd:fail）；
+// 这里统一兜底同步异常与 Promise 异常，避免广告问题冒泡成未捕获错误中断游戏。
+window.safeAdCall = function (ad, method, label) {
+    if (!ad || typeof ad[method] !== 'function') {
+        return;
+    }
+    var name = label || 'ad';
+    try {
+        var ret = ad[method]();
+        if (ret && typeof ret.catch === 'function') {
+            ret.catch(function (e) {
+                logError('[广告] ' + name + '.' + method + ' 失败', e);
+            });
+        }
+    } catch (e) {
+        logError('[广告] ' + name + '.' + method + ' 异常', e);
+    }
+};

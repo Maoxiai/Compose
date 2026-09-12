@@ -22,8 +22,8 @@ cc.Class({
         // 开启物理系统
         cc.director.getPhysicsManager().enabled = true;
        
-        // 创建插屏广告实例，提前初始化（非微信环境或不支持时跳过）
-        if (window.wx && wx.createInterstitialAd){
+        // 创建插屏广告实例（仅创建一次并复用，避免反复进出场景重复创建触发广告系统报错）
+        if (window.wx && wx.createInterstitialAd && !interstitialAd){
             interstitialAd = wx.createInterstitialAd({
             adUnitId: 'adunit-ff8f2ee77c384d1e'
             })
@@ -164,12 +164,8 @@ cc.Class({
         if(reward > 0 && window.wx){
             wx.showToast({ title: '+' + reward + ' 金币', icon: 'none' });
         }
-        // 在适合的场景显示插屏广告
-        if (interstitialAd) {
-            interstitialAd.show().catch((err) => {
-            logError(err)
-            })
-        }
+        // 在适合的场景显示插屏广告（安全调用，内部已兜底异常与 Promise 失败）
+        safeAdCall(interstitialAd, 'show', 'interstitialAd');
     },
 
     // update (dt) {},

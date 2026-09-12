@@ -66,8 +66,8 @@ cc.Class({
         // 开始游戏按钮 Q 弹动效
         this.playStartButtonBounce();
 
-         // 创建原生广告（非微信环境或不支持时跳过）
-         if(window.wx && wx.createCustomAd){
+         // 创建原生广告（仅创建一次并复用；重复创建/销毁会触发微信广告系统报错）
+         if(window.wx && wx.createCustomAd && !customAd){
             customAd = wx.createCustomAd({
                 adUnitId: 'adunit-afa7553d5987db0e',
                 adIntervals: 30,
@@ -80,9 +80,8 @@ cc.Class({
             customAd.onError(err => {
                 logError(err)
             });
-
-            customAd.show()
          }
+         safeAdCall(customAd, 'show', 'customAd');
      },
 
     start () {
@@ -92,9 +91,8 @@ cc.Class({
     //开始游戏加载游戏场景
     startGame()
     {
-        if(customAd){
-            customAd.destroy();
-        }
+        // 用 hide 而非 destroy：保留广告实例复用，避免快速进出场景时频繁创建/销毁触发广告系统报错
+        safeAdCall(customAd, 'hide', 'customAd');
         cc.director.loadScene("game_scene");
     },
 

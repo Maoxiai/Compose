@@ -88,8 +88,8 @@ cc.Class({
             window.s_height = sysInfo.screenHeight;
         }
 
-        // 创建 Banner 广告实例，提前初始化（非微信环境跳过）
-        if(window.wx && wx.createBannerAd){
+        // 创建 Banner 广告实例（仅创建一次并复用，避免多次进出场景反复创建触发广告系统报错）
+        if(window.wx && wx.createBannerAd && !bannerAd){
             bannerAd = wx.createBannerAd({
                 adUnitId: 'adunit-b52fb2e2b1756c36',
                 adIntervals: 30,
@@ -103,10 +103,10 @@ cc.Class({
             bannerAd.onError(err => {
                 logError(err)
             });
-            
-            // 在适合的场景显示 Banner 广告
-            bannerAd.show();
         }
+
+        // 在适合的场景显示 Banner 广告
+        safeAdCall(bannerAd, 'show', 'bannerAd');
         
     },
 
@@ -127,10 +127,8 @@ cc.Class({
         window.SCORE = 0;
         window.WETERMELON_TYPE = 0;
         window.WETERMELON_ARRAY = [];
-        // 在适合的场景显示 Banner 广告
-        if(bannerAd){
-            bannerAd.hide();
-        }
+        // 离开游戏场景时隐藏 Banner 广告（保留实例复用）
+        safeAdCall(bannerAd, 'hide', 'bannerAd');
         cc.director.loadScene("main_scene");
     },
 
