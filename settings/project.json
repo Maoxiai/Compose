@@ -1,5 +1,5 @@
 {
-  "last-module-event-record-time": 1788350523915,
+  "last-module-event-record-time": 1789219879241,
   "group-list": [
     "default",
     "floot",
@@ -29,7 +29,32 @@
     ]
   ],
   "excluded-modules": [
-    "3D Physics/Builtin"
+    "3D",
+    "3D Primitive",
+    "3D Particle",
+    "3D Physics/cannon.js",
+    "3D Physics/Builtin",
+    "DragonBones",
+    "Spine Skeleton",
+    "TiledMap",
+    "VideoPlayer",
+    "WebView",
+    "ParticleSystem",
+    "MotionStreak",
+    "EditBox",
+    "RichText",
+    "Layout",
+    "Mask",
+    "PageView",
+    "PageViewIndicator",
+    "ProgressBar",
+    "Slider",
+    "ScrollBar",
+    "ScrollView",
+    "Toggle",
+    "NodePool",
+    "SafeArea",
+    "StudioComponent"
   ],
   "preview-port": 7456,
   "design-resolution-width": 720,
