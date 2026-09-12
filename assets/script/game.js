@@ -81,28 +81,32 @@ cc.Class({
         // 重置本局连击状态
         ComboManager.reset();
         
-        // 同步获取屏幕尺寸，确保创建广告前拿到真实宽高
-        var sysInfo = wx.getSystemInfoSync();
-        window.s_width = sysInfo.screenWidth;
-        window.s_height = sysInfo.screenHeight;
+        // 同步获取屏幕尺寸，确保创建广告前拿到真实宽高（非微信环境无 wx，跳过）
+        if(window.wx && wx.getSystemInfoSync){
+            var sysInfo = wx.getSystemInfoSync();
+            window.s_width = sysInfo.screenWidth;
+            window.s_height = sysInfo.screenHeight;
+        }
 
-        // 创建 Banner 广告实例，提前初始化
-        bannerAd = wx.createBannerAd({
-            adUnitId: 'adunit-b52fb2e2b1756c36',
-            adIntervals: 30,
-            style: {
-                left: window.s_width * 0.09,
-                top: window.s_height * 0.86,
-                width: window.s_width * 0.75
-            }
-        });
-        
-        bannerAd.onError(err => {
-            console.log(err)
-        });
-        
-        // 在适合的场景显示 Banner 广告
-        bannerAd.show();
+        // 创建 Banner 广告实例，提前初始化（非微信环境跳过）
+        if(window.wx && wx.createBannerAd){
+            bannerAd = wx.createBannerAd({
+                adUnitId: 'adunit-b52fb2e2b1756c36',
+                adIntervals: 30,
+                style: {
+                    left: window.s_width * 0.09,
+                    top: window.s_height * 0.86,
+                    width: window.s_width * 0.75
+                }
+            });
+            
+            bannerAd.onError(err => {
+                logError(err)
+            });
+            
+            // 在适合的场景显示 Banner 广告
+            bannerAd.show();
+        }
         
     },
 
@@ -124,7 +128,9 @@ cc.Class({
         window.WETERMELON_TYPE = 0;
         window.WETERMELON_ARRAY = [];
         // 在适合的场景显示 Banner 广告
-        bannerAd.hide();
+        if(bannerAd){
+            bannerAd.hide();
+        }
         cc.director.loadScene("main_scene");
     },
 
@@ -148,7 +154,7 @@ cc.Class({
 
         // 判断西瓜是否可以下落
         if(this.IsWatermelonDown){
-            console.log("点击");
+            log("点击");
             this.IsWatermelonDown = false;
             this.scheduleOnce(function(){
                 this.IsWatermelonDown = true;

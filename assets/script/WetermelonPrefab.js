@@ -43,7 +43,7 @@ cc.Class({
         this.type = type > 10 ? 10 : type;
         type = this.type;
         // 1. 换图
-        console.log("换图");
+        log("换图");
         this.sprite = this.node.getComponent(cc.Sprite);
         this.sprite.spriteFrame = this.spriteframe[type];
 
@@ -90,14 +90,28 @@ cc.Class({
 
     },
 
+    // 从场上水果列表移除节点（合并销毁时必须调用，否则失效节点会在数组中无限累积）
+    removeFromArray(node){
+        var arr = window.WETERMELON_ARRAY;
+        if(!arr || !node){
+            return;
+        }
+        var i = arr.indexOf(node);
+        if(i >= 0){
+            arr.splice(i, 1);
+        }
+    },
+
     // 西瓜碰撞事件
     onCollisionEnter: function(other, self){
         if(other.tag == self.tag && other.tag != 10){
             if(self.node.y < other.node.y){
-                console.log("碰撞", other.tag);
+                log("碰撞", other.tag);
+                this.removeFromArray(other.node);
                 other.node.destroy();
                 this.watermelonBoom(self.tag + 1);
             }else{
+                this.removeFromArray(this.node);
                 this.node.destroy();
                 return;
             }
@@ -107,9 +121,11 @@ cc.Class({
     onCollisionStay: function(other, self){
         if(other.tag == self.tag && other.tag != 10){
             if(self.node.y < other.node.y){
+                this.removeFromArray(other.node);
                 other.node.destroy();
                 this.watermelonBoom(self.tag + 1);
             }else{
+                this.removeFromArray(this.node);
                 this.node.destroy();
                 return;
             }
@@ -141,7 +157,7 @@ cc.Class({
         this.scheduleOnce(function(){
             this.changeType(type + 1);
             window.SCORE += Math.round((type + 1) * 2 * multiplier);
-            console.log("得分", window.SCORE, "连击倍率", multiplier);
+            log("得分", window.SCORE, "连击倍率", multiplier);
             // 合并 Pop 动画：新水果放大回弹
             this.playPopAnimation();
         }, 0.2);

@@ -33,8 +33,7 @@ cc.Class({
         this.node.removeAllChildren();
 
         this.numberArray = [];
-        var x = Math.floor(window.SCORE);
-        console.log(x);
+        var x = Math.floor(window.SCORE || 0);
         do{
             // 实例化
             let number = cc.instantiate(this.NumberPrefab);
@@ -52,14 +51,20 @@ cc.Class({
         }
     },
 
-    // 更新得分
+    // 更新得分：定时检查分数，仅当分数变化时才重建数字节点
+    // 用 schedule 替代 setInterval，节点销毁时自动停止，避免野定时器
     updataScore(){
-        // 每隔一秒调用一次
-        this.mytime = setInterval(this.setScorenumber.bind(this), 1000);
+        this._lastScore = -1;
+        this.schedule(this._tickScore.bind(this), 0.1);
     },
 
-    onDestroy(){
-        clearInterval(this.mytime);
+    _tickScore(){
+        var s = Math.floor(window.SCORE || 0);
+        if(s === this._lastScore){
+            return;
+        }
+        this._lastScore = s;
+        this.setScorenumber();
     },
 
 });

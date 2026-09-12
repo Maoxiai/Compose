@@ -29,7 +29,7 @@ cc.Class({
         this.node.removeAllChildren();
         this.numberArray=[];
         var x = Math.floor(score);
-        console.log(x)
+        log(x)
 
         do{
             let number = cc.instantiate(this.NumberPrefab);

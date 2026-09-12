@@ -10,11 +10,15 @@ var AdManager = {
         if (this._ad) {
             return;
         }
+        // 非微信环境或低版本基础库不支持激励视频时跳过
+        if (!window.wx || !wx.createRewardedVideoAd) {
+            return;
+        }
         this._ad = wx.createRewardedVideoAd({
             adUnitId: this.adUnitId
         });
         this._ad.onError(function (err) {
-            console.log('激励视频广告出错', err);
+            logError('激励视频广告出错', err);
         });
     },
 
@@ -22,6 +26,10 @@ var AdManager = {
     show: function (onReward, onFail) {
         this._init();
         var ad = this._ad;
+        if (!ad) {
+            onFail && onFail('广告暂不可用');
+            return;
+        }
 
         var handleClose = function (res) {
             if (ad.offClose) {
@@ -46,7 +54,7 @@ var AdManager = {
                     if (ad.offClose) {
                         ad.offClose(handleClose);
                     }
-                    console.log('激励视频广告展示失败', err);
+                    logError('激励视频广告展示失败', err);
                     onFail && onFail('广告暂不可用');
                 });
         });

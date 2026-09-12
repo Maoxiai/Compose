@@ -28,17 +28,18 @@ cc.Class({
 
      onLoad () {
          if(cc.sys.localStorage.getItem("score") == null){
-             console.log("无最高得分");
+             log("无最高得分");
              cc.sys.localStorage.setItem('score', window.SCORE);
-             console.log(cc.sys.localStorage.getItem("score"));
          }else{
-             console.log("最高得分", cc.sys.localStorage.getItem("score"));
+             log("最高得分", cc.sys.localStorage.getItem("score"));
          }
 
-         // 同步获取屏幕尺寸，确保创建广告前拿到真实宽高
-         var sysInfo = wx.getSystemInfoSync();
-         window.s_width = sysInfo.screenWidth;
-         window.s_height = sysInfo.screenHeight;
+         // 同步获取屏幕尺寸，确保创建广告前拿到真实宽高（非微信环境无 wx，跳过）
+         if(window.wx && wx.getSystemInfoSync){
+             var sysInfo = wx.getSystemInfoSync();
+             window.s_width = sysInfo.screenWidth;
+             window.s_height = sysInfo.screenHeight;
+         }
 
          // 恢复音效开关状态
          var savedSound = cc.sys.localStorage.getItem("sound_on");
@@ -65,21 +66,23 @@ cc.Class({
         // 开始游戏按钮 Q 弹动效
         this.playStartButtonBounce();
 
-         // 创建原生广告
-         customAd = wx.createCustomAd({
-            adUnitId: 'adunit-afa7553d5987db0e',
-            adIntervals: 30,
-            style: {
-                left: window.s_width * 0.12,
-                top: window.s_height * 0.68,
-            }
-         });
-         
-         customAd.onError(err => {
-            console.log(err)
-         });
+         // 创建原生广告（非微信环境或不支持时跳过）
+         if(window.wx && wx.createCustomAd){
+            customAd = wx.createCustomAd({
+                adUnitId: 'adunit-afa7553d5987db0e',
+                adIntervals: 30,
+                style: {
+                    left: window.s_width * 0.12,
+                    top: window.s_height * 0.68,
+                }
+            });
+            
+            customAd.onError(err => {
+                logError(err)
+            });
 
-         customAd.show()
+            customAd.show()
+         }
      },
 
     start () {
@@ -89,7 +92,9 @@ cc.Class({
     //开始游戏加载游戏场景
     startGame()
     {
-        customAd.destroy()
+        if(customAd){
+            customAd.destroy();
+        }
         cc.director.loadScene("game_scene");
     },
 
@@ -405,7 +410,7 @@ cc.Class({
         this.node.addChild(btn);
         // 金币图标中心 (-309, 560)，奖杯位于其正下方
         btn.setPosition(cc.v2(-309, 476));
-        console.log('[排行榜] 入口图标已创建 pos=(' + btn.position.x + ',' + btn.position.y +
+        log('[排行榜] 入口图标已创建 pos=(' + btn.position.x + ',' + btn.position.y +
             ') active=' + btn.activeInHierarchy);
     },
 
@@ -465,13 +470,13 @@ cc.Class({
         panel.addChild(listNode);
         this.rankListNode = listNode;
 
-        console.log('[排行榜] available =', RankManager.available(), 'hasSubContextView =', !!cc.SubContextView);
+        log('[排行榜] available =', RankManager.available(), 'hasSubContextView =', !!cc.SubContextView);
         if (RankManager.available() && cc.SubContextView) {
             try {
                 this.rankSubView = listNode.addComponent(cc.SubContextView);
-                console.log('[排行榜] SubContextView 已创建');
+                log('[排行榜] SubContextView 已创建');
             } catch (e) {
-                console.log('[排行榜] 创建 SubContextView 失败:', e);
+                logError('[排行榜] 创建 SubContextView 失败:', e);
             }
         } else {
             // 非微信环境占位提示
@@ -577,7 +582,7 @@ cc.Class({
                         scope: 'scope.WxFriendInteraction',
                         success: function(){ callback(); },
                         fail: function(err){
-                            console.log('[排行榜] 好友授权被拒绝', err && err.errMsg);
+                            log('[排行榜] 好友授权被拒绝', err && err.errMsg);
                             wx.showModal({
                                 title: '未授权好友信息',
                                 content: '未获得好友信息授权，无法显示好友排行榜。',

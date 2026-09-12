@@ -22,8 +22,8 @@ cc.Class({
         // 开启物理系统
         cc.director.getPhysicsManager().enabled = true;
        
-        // 创建插屏广告实例，提前初始化
-        if (wx.createInterstitialAd){
+        // 创建插屏广告实例，提前初始化（非微信环境或不支持时跳过）
+        if (window.wx && wx.createInterstitialAd){
             interstitialAd = wx.createInterstitialAd({
             adUnitId: 'adunit-ff8f2ee77c384d1e'
             })
@@ -57,7 +57,7 @@ cc.Class({
             }
         }
         this.watching.push({ node: node, frames: 0 });
-        console.log("进入死亡线区域，等待静止", this.watching.length);
+        log("进入死亡线区域，等待静止", this.watching.length);
     },
 
     // 水果离开死亡线区域（弹回安全区）：取消监测
@@ -142,7 +142,7 @@ cc.Class({
             return;
         }
         this.gameOver = true;
-        console.log("死亡（静止后结算）", node ? node.name : '');
+        log("死亡（静止后结算）", node ? node.name : '');
 
         // 恢复死亡线颜色
         if(this._deathSprite){
@@ -167,7 +167,7 @@ cc.Class({
         // 在适合的场景显示插屏广告
         if (interstitialAd) {
             interstitialAd.show().catch((err) => {
-            console.error(err)
+            logError(err)
             })
         }
     },

@@ -49,10 +49,10 @@ var RankManager = {
                 { key: this.keyWeek, value: String(bestWeek) }
             ],
             success: function () {
-                console.log('排行榜分数上传成功', bestAll, bestWeek);
+                log('排行榜分数上传成功', bestAll, bestWeek);
             },
             fail: function (err) {
-                console.log('排行榜分数上传失败', err);
+                logError('排行榜分数上传失败', err);
             }
         });
     },
@@ -65,7 +65,7 @@ var RankManager = {
         try {
             wx.getOpenDataContext().postMessage(msg);
         } catch (e) {
-            console.log('向开放数据域发送消息失败', e);
+            logError('向开放数据域发送消息失败', e);
         }
     },
 
